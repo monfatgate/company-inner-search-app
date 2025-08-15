@@ -42,6 +42,12 @@ APP_BOOT_MESSAGE = "アプリが起動されました。"
 MODEL = "gpt-4o-mini"
 TEMPERATURE = 0.5
 
+# ==========================================
+# Retriever設定系
+# ==========================================
+RETRIEVER_K = 5
+CHUNK_SIZE = 500
+CHUNK_OVERLAP = 50
 
 # ==========================================
 # RAG参照用のデータソース系
@@ -55,7 +61,6 @@ SUPPORTED_EXTENSIONS = {
 WEB_URL_LOAD_TARGETS = [
     "https://generative-ai.web-camp.io/"
 ]
-
 
 # ==========================================
 # プロンプトテンプレート
