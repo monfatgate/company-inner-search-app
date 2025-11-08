@@ -13,7 +13,7 @@ import sys
 import unicodedata
 from dotenv import load_dotenv
 import streamlit as st
-from docx import Document
+from langchain.schema import Document
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
@@ -131,8 +131,35 @@ def initialize_retriever():
     # チャンク分割を実施
     splitted_docs = text_splitter.split_documents(docs_all)
 
+    # 特定のファイルだけ結合
+    target_file = "社員名簿.csv"
+    refactored_docs = []
+    combined_done = False  # すでに結合済みかどうか
+
+    for d in splitted_docs:
+        base = os.path.basename(d.metadata.get("source", ""))
+        if base == target_file:
+            if not combined_done:
+                # 対象ファイルのドキュメントをまとめる
+                same_file_docs = [x.page_content for x in splitted_docs if os.path.basename(x.metadata["source"]) == target_file]
+                combined_text = "\n===================================================\n".join(same_file_docs)
+                combined_doc = Document(
+                    page_content=combined_text,
+                    metadata={
+                        "source": d.metadata["source"]
+                    },
+                )
+                refactored_docs.append(combined_doc)
+                combined_done = True
+            # それ以降はスキップ
+        else:
+            refactored_docs.append(d)
+
+    logger.info("元のドキュメント数: %d", len(splitted_docs))
+    logger.info("再構成後ドキュメント数: %d", len(refactored_docs))
+
     # ベクターストアの作成
-    db = Chroma.from_documents(splitted_docs, embedding=embeddings)
+    db = Chroma.from_documents(refactored_docs, embedding=embeddings)
 
     # ベクターストアを検索するRetrieverの作成
     st.session_state.retriever = db.as_retriever(search_kwargs={"k": ct.RETRIEVER_K})
